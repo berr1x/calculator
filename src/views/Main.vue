@@ -19,18 +19,10 @@ export default {
 
 <style scoped>
 
-.container {
-    display: flex;
-    width: 100%;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
-
 .button {
     width: fit-content;
     color: #fff;
-    font-weight: 700;
+    font-weight: 700;   
     font-size: 18px;
     background-color: rgba(0, 0, 0, 1);
     padding: 15px;

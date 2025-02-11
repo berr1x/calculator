@@ -1,13 +1,10 @@
 import { createWebHistory, createRouter } from 'vue-router'
 
-import CalculatorView from '@/views/Calculator.vue'
-import HistoryView from '@/views/History.vue'
-import MainView from '@/views/Main.vue'
-
+//добавил ленивую загрузку компонентов
 const routes = [
-    { path: '/', component: MainView },
-    { path: '/calculator', component: CalculatorView },
-    { path: '/history', component: HistoryView }
+    { path: '/', component: () => import('@/views/Main.vue') },
+    { path: '/calculator', component: () => import('@/views/Calculator.vue') },
+    { path: '/history', component: () => import('@/views/History.vue') }
 ]
 
 const router = createRouter({

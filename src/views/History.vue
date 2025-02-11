@@ -3,7 +3,7 @@
         <div class="history">
             <div class="top-block">
                 <div class="left">
-                    <img @click="this.$router.push('/calculator')" src="@/assets/arrow.svg" width="18" height="18" />
+                    <img @click="goToCalculator" src="@/assets/arrow.svg" width="18" height="18" />
                     <p>История вычислений</p>
                 </div>
                 <div class="right">
@@ -14,9 +14,10 @@
 
                 <div v-if="history.length === 0" class="empty">Еще нет вычислений</div>
 
+                <!-- исправление. убрал index -->
                 <HistoryItem
-                    v-for="(item, index) in history"
-                    :key="index"
+                    v-for="item in history"
+                    :key="item.id"
                     :expression="item.expression"
                     :result="item.result"
                     :date="item.date"
@@ -36,15 +37,16 @@ export default {
     components: {
         HistoryItem
     },
+    created() {
+        this.store = useCalculatorStore();
+    },
     computed: {
         history() {
-            const store = useCalculatorStore();
-            return store.history;
+            return this.store.history;
         }
     },
     async mounted() {
-        const store = useCalculatorStore();
-        await store.fetchHistory();
+        await this.store.fetchHistory();
     },
     methods: {
         async clearHistory() {
@@ -54,24 +56,19 @@ export default {
                         'Content-Type': 'application/json',
                     },
                 });
-                const store = useCalculatorStore();
-                await store.fetchHistory()
+                await this.store.fetchHistory()
             } catch (error) {
                 console.error('Ошибка:', error);
             }
+        },
+        goToCalculator() {
+            this.$router.push('/calculator')
         }
     }
 }
 </script>
 
 <style scoped>
-.container {
-    display: flex;
-    width: 100%;
-    height: 100vh;
-    justify-content: center;
-    align-items: center;
-}
 
 .history {
     display: flex;
@@ -115,22 +112,14 @@ export default {
 
 @media (max-width: 768px) {
     .container {
-    display: flex;
-    width: 100%;
-    height: 100vh;
-    justify-content: center;
-    align-items: start;
+        align-items: start;
 
-}
+    }
 
-.history {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    background-color: transparent;
-    border: none;
-    padding: 18px;
-    border-radius: 0px;
+    .history {
+        width: 100%;
+        border: none;
+        border-radius: 0px;
 }
 }
 </style>

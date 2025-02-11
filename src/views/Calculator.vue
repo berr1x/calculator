@@ -10,62 +10,28 @@
                     Результат: <strong>{{ expressionResult }}</strong>
                 </p>
             </div>
+            <!-- вот наверное более правильная передача данных в функцию и более короткая запись... -->
             <div class="calc-block">
-                <div class="calc-btn" @click="addElToString($event.target.innerText)">
-                    <p>7</p>
-                </div>
-                <div class="calc-btn" @click="addElToString($event.target.innerText)">
-                    <p>8</p>
-                </div>
-                <div class="calc-btn" @click="addElToString($event.target.innerText)">
-                    <p>9</p>
-                </div>
-                <div class="calc-btn fill" @click="addElToString($event.target.innerText)">
-                    <p>*</p>
-                </div>
-                <div class="calc-btn" @click="addElToString($event.target.innerText)">
-                    <p>4</p>
-                </div>
-                <div class="calc-btn" @click="addElToString($event.target.innerText)">
-                    <p>5</p>
-                </div>
-                <div class="calc-btn" @click="addElToString($event.target.innerText)">
-                    <p>6</p>
-                </div>
-                <div class="calc-btn fill" @click="addElToString($event.target.innerText)">
-                    <p>-</p>
-                </div>
-                <div class="calc-btn" @click="addElToString($event.target.innerText)">
-                    <p>1</p>
-                </div>
-                <div class="calc-btn" @click="addElToString($event.target.innerText)">
-                    <p>2</p>
-                </div>
-                <div class="calc-btn" @click="addElToString($event.target.innerText)">
-                    <p>3</p>
-                </div>
-                <div class="calc-btn fill" @click="addElToString($event.target.innerText)">
-                    <p>+</p>
-                </div>
-                <div class="calc-btn wide" @click="addElToString($event.target.innerText)">
-                    <p>0</p>
-                </div>
-                <div class="calc-btn fill" @click="expressionCalc">
-                    <p>=</p>
-                </div>
-                <div class="calc-btn fill" @click="addElToString($event.target.innerText)">
-                    <p>/</p>
+                <div
+                    v-for="(btn, index) in buttons"
+                    :key="index"
+                    class="calc-btn"
+                    :class="{ wide: btn === '0', fill: ['/', '*', '-', '+', '='].includes(btn) }"
+                    @click="btn === '=' ? expressionCalc() : addElToString(btn)"
+                >
+                    <p>{{ btn }}</p>
                 </div>
             </div>
             <div class="history-block">
-                <p @click="this.$router.push('/history')">История вычислений</p>
+                <router-link style="text-decoration: none;" to="/history">
+                    <p>История вычислений</p>
+                </router-link>
             </div>
         </div>
     </div>
 </template>
 
 <script>
-import { useCalculatorStore } from '@/stores/calc.js'
 import axios from 'axios';
 
 export default {
@@ -74,15 +40,16 @@ export default {
         return {
             expressionValue: "0",
             expressionResult: 0,
-            operators: ["/", "+", "-", "*"]
+            operators: ["/", "+", "-", "*"],
+            buttons: ['7', '8', '9', '*', '4', '5', '6', '-', '1', '2', '3', '+', '0', '=', '/']
         }
     },
     methods: {
         addElToString(e) {
             if (this.expressionValue.length >= 10) return
             const lastChar = this.expressionValue[this.expressionValue.length - 1];
-            if(this.expressionValue == "0" && this.operators.includes(e)) return
-            if(this.expressionValue == "0") this.expressionValue = "";
+            if(this.expressionValue === "0" && this.operators.includes(e)) return
+            if(this.expressionValue === "0") this.expressionValue = "";
 
             if (this.operators.includes(lastChar) && this.operators.includes(e)) {
                 this.expressionValue = this.expressionValue.slice(0, -1);
@@ -95,14 +62,10 @@ export default {
             this.expressionResult = this.calculate()
             this.expressionResult = parseFloat(this.expressionResult.toFixed(4))
 
-            const store = useCalculatorStore()
             const historyEntry = {
                 expression: this.expressionValue,
                 result: this.expressionResult,
-                date: new Date().toLocaleString()
             };
-
-            store.addToHistory(historyEntry.expression, historyEntry.result)
 
             try {
                 const response = await axios.post('http://localhost:3000/history/expression', historyEntry, {
@@ -119,21 +82,40 @@ export default {
             this.expressionValue = "0"
         },
         calculate() {
-            return new Function('return ' + this.expressionValue)(); //без использования eval как в ТЗ...
+            //описание каждого действия калькулятора...
+
+            const tokens = this.expressionValue.match(/(\d+)|([+\-*/])/g) || [];
+            let result = parseFloat(tokens[0]);
+
+            for (let i = 1; i < tokens.length; i += 2) {
+                const operator = tokens[i];
+                const nextNumber = parseFloat(tokens[i + 1]);
+
+                switch (operator) {
+                    case '+':
+                        result += nextNumber;
+                        break;
+                    case '-':
+                        result -= nextNumber;
+                        break;
+                    case '*':
+                        result *= nextNumber;
+                        break;
+                    case '/':
+                        result /= nextNumber;
+                        break;
+                    default:
+                        return 'Ошибка';
+                }
+            }
+
+            return result;
         }
     },
 }
 </script>
 
 <style scoped>
-
-.container {
-    display: flex;
-    width: 100%;
-    height: 100vh;
-    justify-content: center;
-    align-items: center;
-}
 
 .calculator {
     display: flex;
