@@ -28,14 +28,14 @@
 </template>
 
 <script>
-import HistoryItem from "@/components/HistoryItem"
+import { defineAsyncComponent } from 'vue'
 import { useCalculatorStore } from '@/stores/calc.js'
 import axios from "axios";
 
 export default {
     name: "HistoryView",
     components: {
-        HistoryItem
+        HistoryItem: defineAsyncComponent(() => import("@/components/HistoryItem.vue"))
     },
     created() {
         this.store = useCalculatorStore();

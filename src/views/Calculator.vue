@@ -13,8 +13,8 @@
             <!-- вот наверное более правильная передача данных в функцию и более короткая запись... -->
             <div class="calc-block">
                 <div
-                    v-for="(btn, index) in buttons"
-                    :key="index"
+                    v-for="btn in buttons"
+                    :key="btn"
                     class="calc-btn"
                     :class="{ wide: btn === '0', fill: ['/', '*', '-', '+', '='].includes(btn) }"
                     @click="btn === '=' ? expressionCalc() : addElToString(btn)"
@@ -60,6 +60,10 @@ export default {
             if(this.operators.includes(this.expressionValue[this.expressionValue.length - 1])) return
 
             this.expressionResult = this.calculate()
+            if (this.expressionResult === "Ошибка") {
+                return
+            }
+
             this.expressionResult = parseFloat(this.expressionResult.toFixed(4))
 
             const historyEntry = {
@@ -82,34 +86,72 @@ export default {
             this.expressionValue = "0"
         },
         calculate() {
-            //описание каждого действия калькулятора...
+            //описание каждого действия калькулятора и проверка на порядок действий...
 
             const tokens = this.expressionValue.match(/(\d+)|([+\-*/])/g) || [];
-            let result = parseFloat(tokens[0]);
 
-            for (let i = 1; i < tokens.length; i += 2) {
-                const operator = tokens[i];
-                const nextNumber = parseFloat(tokens[i + 1]);
+            const numbers = [];
+            const operators = [];
 
-                switch (operator) {
-                    case '+':
-                        result += nextNumber;
-                        break;
-                    case '-':
-                        result -= nextNumber;
-                        break;
-                    case '*':
-                        result *= nextNumber;
-                        break;
-                    case '/':
-                        result /= nextNumber;
-                        break;
-                    default:
-                        return 'Ошибка';
+            //приоритет для операторов
+            const precedence = {
+                '+': 1,
+                '-': 1,
+                '*': 2,
+                '/': 2,
+            };
+
+            for (let i = 0; i < tokens.length; i++) {
+                const token = tokens[i];
+
+                if (/\d+/.test(token)) {
+                    numbers.push(parseFloat(token));
+                } else if (['+', '-', '*', '/'].includes(token)) {
+                    while (
+                        operators.length > 0 &&
+                        precedence[operators[operators.length - 1]] >= precedence[token]
+                    ) {
+                        this.applyOperation(numbers, operators.pop());
+                    }
+                    operators.push(token);
                 }
             }
 
-            return result;
+            while (operators.length > 0) {
+                this.applyOperation(numbers, operators.pop());
+            }
+
+            if (numbers.length === 1) {
+                return numbers[0];
+            } else {
+                return 'Ошибка';
+            }
+        },
+        //добавил отдельный метод для выполнения операций...
+        applyOperation(numbers, operator) {
+            const b = numbers.pop();
+            const a = numbers.pop();
+
+            switch (operator) {
+                case '+':
+                    numbers.push(a + b);
+                    break;
+                case '-':
+                    numbers.push(a - b);
+                    break;
+                case '*':
+                    numbers.push(a * b);
+                    break;
+                case '/':
+                    if (b === 0) {
+                        numbers.push('Ошибка'); // добавил проверку деления на ноль, которой не было до этого
+                    } else {
+                        numbers.push(a / b);
+                    }
+                    break;
+                default:
+                    numbers.push('Ошибка');
+            }
         }
     },
 }
